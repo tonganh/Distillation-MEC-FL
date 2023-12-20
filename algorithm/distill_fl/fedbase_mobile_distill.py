@@ -446,6 +446,9 @@ class BasicEdge(BasicClient):
         self.valid_data = None
         self.clients_collected  = []
         self.total_transfer_size = 0
+
+
+        self.limit_volume = 4000
         # self.list_clients = []
     
     def split_data(self):
@@ -489,7 +492,11 @@ class BasicEdge(BasicClient):
 
                 # print("Clients collected", self.clients_collected)
 
-                    
+                # print(self.X_train, self.X_train.shape, type(self.X_train))  
+                # print(self.y_train.shape, type(self.y_train))   
+
+                # if not torch.is_tensor(self.X_train):                 
+                  
                 self.train_data = XYDataset(self.X_train, self.y_train, client_name=client.name)
                 self.valid_data = XYDataset(self.X_valid, self.y_valid, client_name=client.name)
 

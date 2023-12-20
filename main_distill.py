@@ -59,14 +59,14 @@ class MyLogger(flw.Logger):
         print(self.temp.format("Edge and cloud cost", self.output['edge_cloud_communication_cost'][-1]))
 
         # dataset = server['task']
-        if not os.path.exists('results_distill_pmove'.format(server.option['task'])):
-            os.mkdir('results_distill_pmove'.format(server.option['task']))
+        if not os.path.exists('results_distill_pmove_3'.format(server.option['task'])):
+            os.mkdir('results_distill_pmove_3'.format(server.option['task']))
 
-        if not os.path.exists('results_distill_pmove/{}'.format(server.option['task'])):
-            os.mkdir('results_distill_pmove/{}'.format(server.option['task']))
+        if not os.path.exists('results_distill_pmove_3/{}'.format(server.option['task'])):
+            os.mkdir('results_distill_pmove_3/{}'.format(server.option['task']))
 
 
-        path_save_data = 'results_distill_pmove/{}/remove_{}_ipc_{}_proportionx{}_pmove_{}_edge_freq_{}'.format(
+        path_save_data = 'results_distill_pmove_3/{}/remove_{}_ipc_{}_proportionx{}_pmove_{}_edge_freq_{}'.format(
                                                                                 server.option['task'],
                                                                                 server.option['remove_client'],
                                                                                 server.option['distill_ipc'], 

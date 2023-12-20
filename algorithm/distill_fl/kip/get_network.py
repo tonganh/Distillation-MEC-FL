@@ -41,7 +41,7 @@ def FullyConvolutionalNetwork(
         b_std=b_std,
         padding='SAME',
         parameterization=parameterization)
-
+    layers = []
     for _ in range(depth):
         layers += [conv(width, (3, 3)), activation_fn]
     layers += [stax.Flatten(), stax.Dense(num_classes, W_std=W_std, b_std=b_std,

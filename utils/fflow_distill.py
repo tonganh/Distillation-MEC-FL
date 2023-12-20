@@ -82,6 +82,9 @@ def read_option():
     parser.add_argument('--distill_iters', help='Number of data distillation iterations', type=int,default=300)
     parser.add_argument('--kip_support_size', help='Size of distill dataset if using KIP', type=int,default=50)
     parser.add_argument('--remove_client', help='Setting remove client with setting', type=int, default=0)
+    parser.add_argument('--architec_KIP', help='select architecture for KIP method distill', default='FC')
+    parser.add_argument('--depth_KIP', help='select depth for KIP method distill', default=1, type=int)
+
 
 
     parser.add_argument('--distill_before_train', help='Choose to distill before training or not', action='store_true',default=False)
@@ -133,7 +136,7 @@ def initialize(option):
     # init server
     print("init server...", end='')
     server_path = '%s.%s' % ('algorithm.distill_fl', option['algorithm'])
-    server = getattr(importlib.import_module(server_path), 'CloudServer')(option, utils.fmodule.Model(dropout_value=option['dropout_value']).to(utils.fmodule.device), clients = clients, test_data = test_data)
+    server = getattr(importlib.import_module(server_path), 'CloudServer')(option, utils.fmodule.Model().to(utils.fmodule.device), clients = clients, test_data = test_data)
     print('done')
     return server    # print('done')
 

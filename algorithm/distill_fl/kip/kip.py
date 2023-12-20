@@ -17,7 +17,7 @@ import jax.config
 from jax.config import config as jax_config
 import neural_tangents as nt
 from neural_tangents import stax
-from .get_network import FullyConnectedNetwork, FullyConvolutionalNetwork, MyrtleNetwork
+from get_network import FullyConnectedNetwork, FullyConvolutionalNetwork, MyrtleNetwork
 import matplotlib.pyplot as plt
 import os
 import jax.numpy as jnp
@@ -342,7 +342,6 @@ class Distiller():
     def distill(self, log_freq=20, seed=1,  X_TRAIN_RAW=None, LABELS_TRAIN=None, X_TEST_RAW=None, LABELS_TEST=None,
                 additional_message = None):
 
-        import pdb; pdb.set_trace()
 
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)  
@@ -478,6 +477,6 @@ class Distiller():
     # params_final, params_init, params_init_raw = train(300)
 
 
-# if __name__ == "__main__":
-#     distiller = Distiller(itr=300, TARGET_BATCH_SIZE=5000)
-#     distiller.run()
+if __name__ == "__main__":
+    distiller = Distiller(itr=300, TARGET_BATCH_SIZE=5000, ARCHITECTURE='Conv')
+    distiller.run()

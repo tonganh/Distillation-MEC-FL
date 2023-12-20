@@ -145,6 +145,26 @@ def _model_average(ms = [], p = []):
         _modeldict_cp(res.state_dict(), _modeldict_weighted_average([mi.state_dict() for mi in ms], p))
     return res
 
+def _model_average(ms = [], p = []):
+    if not ms: return None
+    if not p: p = [1.0 / len(ms) for _ in range(len(ms))]
+    op_with_graph = sum([w.ingraph for w in ms]) > 0
+    res = Model().to(ms[0].get_device())
+    if op_with_graph:
+        mlks = [get_module_from_model(mi) for mi in ms]
+        mlr = get_module_from_model(res)
+        for n in range(len(mlr)):
+            mpks = [mlk[n]._parameters for mlk in mlks]
+            rd = _modeldict_weighted_average(mpks, p)
+            for l in mlr[n]._parameters.keys():
+                if mlr[n]._parameters[l] is None: continue
+                mlr[n]._parameters[l] = rd[l]
+        res.op_with_graph()
+    else:
+        _modeldict_cp(res.state_dict(), _modeldict_weighted_average([mi.state_dict() for mi in ms], p))
+    return res
+
+
 def _model_add(m1, m2):
     op_with_graph = m1.ingraph or m2.ingraph
     res = Model().to(m1.get_device())

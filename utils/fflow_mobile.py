@@ -92,9 +92,8 @@ def read_option():
 
     parser.add_argument('--distill_temperature', help='Temperature used for distillation loss', type=float, default=5)
     parser.add_argument('--distill_alpha', help='Temperature used for distillation loss', type=float, default=0.1)
-
-
-    parser.add_argument('--global_ensemble_weights', help='Ensemble weights of the global model', type=float, default=0.1)
+    parser.add_argument('--global_beta', help='KD weights of the global model', type=float, default=0.8)
+    parser.add_argument('--edge_model_buffer_size', help='Max size of edge ensemble buffer', type=int, default=3)
 
     # Delete client after each round
     # 0 is not delete, 1 is delete

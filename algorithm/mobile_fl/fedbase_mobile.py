@@ -539,6 +539,8 @@ class BasicMobileClient(BasicClient):
         optimizer = self.calculator.get_optimizer(self.optimizer_name, model, lr = self.learning_rate, weight_decay=self.weight_decay, momentum=self.momentum)
         for iter in range(self.epochs):
             for batch_id, batch_data in enumerate(data_loader):
+                # print(batch_data)
+                # print(batch_data.shape)
                 model.zero_grad()
                 loss = self.calculator.get_loss(model, batch_data)
                 loss.backward()

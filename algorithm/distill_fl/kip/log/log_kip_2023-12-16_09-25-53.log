@@ -1,0 +1,2 @@
+2023-12-16 09:25:53,369 - DEBUG - Starting new HTTPS connection (1): www.cs.toronto.edu:443
+2023-12-16 09:25:55,574 - DEBUG - https://www.cs.toronto.edu:443 "GET /~kriz/cifar-10-python.tar.gz HTTP/1.1" 200 170498071

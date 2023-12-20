@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from torch import nn
 from utils.fmodule import FModule
-
+import torch
 class Model(FModule):
     def __init__(self):
         super(Model, self).__init__()
@@ -20,17 +20,24 @@ class Model(FModule):
         )
         self.decoder = nn.Sequential(
             nn.Linear(3200, 256),
-            nn.BatchNorm1d(256),
+            # nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Linear(256, 64),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
+            # nn.BatchNorm1d(64),
+            # nn.ReLU(),
             nn.Linear(64, 10),
         )
+        self.dropout = nn.Dropout(0.3)
+        # self.linear_1 = nn.Linear(3200,256)
+
 
     def forward(self, x):
         x = self.encoder(x)
+        # x = torch.flatten(x,start_dim = 1)
         x = x.flatten(1)
+        # print(x.shape)
+        x = self.dropout(x)
+
         return self.decoder(x)
     
     def pred_and_rep(self, x):

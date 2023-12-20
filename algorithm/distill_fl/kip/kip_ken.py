@@ -532,7 +532,6 @@ class Distiller():
 
         if isinstance(LABELS_TEST, torch.Tensor):
             LABELS_TEST = LABELS_TEST.numpy()
-
         print('Labels train')
         self.logging_input_dataset(LABELS_TRAIN)
         print('Labels test')
@@ -614,6 +613,7 @@ class Distiller():
                     best_data_synthetic = params
                     x_np = np.array(params['x'])
                     y_prob = np.array(params['y'])
+                    breakpoint()
                     y_np = np.argmax(y_prob, axis=1)
                     # convert ra 1 label cụ thể
                     # logger.info(f'x_np {x_np}')
@@ -644,8 +644,8 @@ class Distiller():
         return params, params_init, params_init_raw
 
     def get_inds_from_labels(self, labels: np.ndarray, *arrays: np.ndarray):
-        classes_using = [{'class': 0, 'n_per_class': 20},
-                         {'class': 1, 'n_per_class': 100},
+        classes_using = [{'class': 0, 'n_per_class': 200},
+                         {'class': 1, 'n_per_class': 200},
                          {'class': 2, 'n_per_class': 300}
                          ]
         inds = np.concatenate([
@@ -665,6 +665,7 @@ class Distiller():
         X_TRAIN_RAW, LABELS_TRAIN, X_TEST_RAW, LABELS_TEST = self.get_torch_vision_dataset_not_reshape(
             name='cifar10')
 
+        breakpoint()
         number_dataset_need_get = 500
         print('Start line 332')
         # _, _, LABELS_TRAIN, X_TRAIN_RAW = self.class_balanced_sample(
@@ -673,20 +674,20 @@ class Distiller():
         # _, _, LABELS_TEST, X_TEST_RAW = self.class_balanced_sample(
         #     self.SUPPORT_SIZE, LABELS_TEST, LABELS_TEST, X_TEST_RAW)
 
-        # _, LABELS_TRAIN, X_TRAIN_RAW = self.get_inds_from_labels(
-        #     LABELS_TRAIN, X_TRAIN_RAW)
+        _, LABELS_TRAIN, X_TRAIN_RAW = self.get_inds_from_labels(
+            LABELS_TRAIN, X_TRAIN_RAW)
         # !
-        # classes_test = [{'class': 0, 'n_per_class': 100},
-        #                 {'class': 1, 'n_per_class': 500},
-        #                 {'class': 2, 'n_per_class': 500}
-        #                 ]
-        # inds = np.concatenate([
-        #     np.random.choice(np.where(LABELS_TEST == c['class'])[
-        #                      0], c['n_per_class'], replace=False)
-        #     for c in classes_test
-        # ])
-        # LABELS_TEST = LABELS_TEST[inds]
-        # X_TEST_RAW = X_TEST_RAW[inds]
+        classes_test = [{'class': 0, 'n_per_class': 100},
+                        {'class': 1, 'n_per_class': 100},
+                        {'class': 2, 'n_per_class': 100},
+                        ]
+        inds = np.concatenate([
+            np.random.choice(np.where(LABELS_TEST == c['class'])[
+                             0], c['n_per_class'], replace=False)
+            for c in classes_test
+        ])
+        LABELS_TEST = LABELS_TEST[inds]
+        X_TEST_RAW = X_TEST_RAW[inds]
         # print('411', X_TEST_RAW[0].shape)
         # import pdb; pdb.set_trace()
         # !
@@ -729,5 +730,5 @@ class Distiller():
 
 
 if __name__ == "__main__":
-    distiller = Distiller(itr=300, TARGET_BATCH_SIZE=5000, SUPPORT_SIZE=100)
+    distiller = Distiller(itr=300, TARGET_BATCH_SIZE=5000, SUPPORT_SIZE=100, ARCHITECTURE='Conv')
     distiller.run()
