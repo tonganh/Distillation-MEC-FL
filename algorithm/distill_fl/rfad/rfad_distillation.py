@@ -41,7 +41,7 @@ class RFAD_Distillation():
                         samples_per_class=1, n_classes=10, learn_labels=False, batch_size=1280,
                         X_valid=None, y_valid=None, n_channels=3, im_size=32, X_init=None, jit=1e-6,
                         seed=0, corruption=0, whitening_mat=None, from_loader=False):
-        
+
         y_train = y_train.long()
         coreset_size = samples_per_class * n_classes
 
@@ -156,10 +156,12 @@ class RFAD_Distillation():
                         np.mean((y_valid_one_hot - preds_valid)**2)
 
                 else:
-                    valid_loss = nn.CrossEntropyLoss()(torch.exp(k) * torch.tensor(preds_valid).cuda(device=self.server_gpu_id),y_valid.long().cuda(device=self.server_gpu_id)).detach().cpu().item()
+                    valid_loss = nn.CrossEntropyLoss()(torch.exp(k) * torch.tensor(preds_valid).cuda(device=self.server_gpu_id),
+                                                       y_valid.long().cuda(device=self.server_gpu_id)).detach().cpu().item()
                     print("Pass - 158")
                 # 0.001
-                valid_acc = np.mean(preds_valid.argmax(axis=1) == y_valid_one_hot.argmax(axis=1))
+                valid_acc = np.mean(preds_valid.argmax(
+                    axis=1) == y_valid_one_hot.argmax(axis=1))
                 total_time_running_for_iter = time.time() - start_time
                 file_print('iter: {}, valid loss: {}, valid acc: {}, elapsed time: {:.1f}s'.format(
                     i, valid_loss, valid_acc, time.time() - start_time))
@@ -206,7 +208,7 @@ class RFAD_Distillation():
                     n_models = schedule[schedule_i][1]
                     model_rot = schedule[schedule_i][2]
                     schedule_i += 1
-            
+
             if i % ga_steps == 0:
                 optim.zero_grad()
 
@@ -246,7 +248,8 @@ class RFAD_Distillation():
                     if not from_loader:
                         indices = np.random.choice(
                             X_train.shape[0], 10, replace=False)
-                        X_batch = X_train[indices].float().cuda(device=self.server_gpu_id)
+                        X_batch = X_train[indices].float().cuda(
+                            device=self.server_gpu_id)
                         y_batch = y_train[indices]
                     else:
                         try:
@@ -262,8 +265,9 @@ class RFAD_Distillation():
                     for m in range(n_models):
                         X_train_features_inner.append(
                             models_list[m](X_batch).detach())
-                    
-                    y_values.append(torch.nn.functional.one_hot(y_batch, n_classes).cuda(device=self.server_gpu_id) - 1/n_classes)
+
+                    y_values.append(torch.nn.functional.one_hot(y_batch, n_classes).cuda(
+                        device=self.server_gpu_id) - 1/n_classes)
 
                     X_train_features_inner = torch.cat(
                         X_train_features_inner, 1)/np.sqrt(n_models * X_train_features_inner[0].shape[1])
@@ -296,14 +300,22 @@ class RFAD_Distillation():
                 file_print('=', end='')
 
     def distill(self, X_TRAIN_RAW, LABELS_TRAIN, X_TEST_RAW, LABELS_TEST, options):
-        X_TRAIN_RAW = torch.cat((X_TRAIN_RAW, X_TEST_RAW), 0)
-        LABELS_TRAIN = torch.cat((LABELS_TRAIN, LABELS_TEST), 0)
+        # X_TRAIN_RAW = torch.cat((X_TRAIN_RAW, X_TEST_RAW), 0)
+        # LABELS_TRAIN = torch.cat((LABELS_TRAIN, LABELS_TEST), 0)
         LABELS_TRAIN, reversed_data_mapping = mapping_data_with_index(
             LABELS_TRAIN)
+        LABELS_TEST, _ = mapping_data_with_index(LABELS_TEST)
         self.reversed_data_mapping = reversed_data_mapping
         if self.dataset == 'cifar10':
             im_size = 32
             n_channels = 3
+        if self.dataset == 'mnist':
+            im_size = 28
+            n_channels = 1
+        if self.dataset == 'cifar100':
+            im_size = 32
+            n_channels = 3
+
         classes = np.unique(LABELS_TRAIN)
         n_classes = len(classes)
 
@@ -312,12 +324,15 @@ class RFAD_Distillation():
             valid_indices = []
             for c in classes:
                 class_indices = np.where(LABELS_TRAIN == c)[0]
-                valid_indices.append(class_indices[np.random.choice(len(class_indices), 500 if n_classes == 10 else 100)])
+                valid_indices.append(class_indices[np.random.choice(
+                    len(class_indices), 500 if n_classes == 10 else 100)])
 
             valid_indices = np.concatenate(valid_indices)
-            X_valid = X_TRAIN_RAW[valid_indices]
-            y_valid = LABELS_TRAIN[valid_indices]
+            # X_valid = X_TRAIN_RAW[valid_indices]
+            # y_valid = LABELS_TRAIN[valid_indices]
 
+        X_valid = X_TEST_RAW
+        y_valid = LABELS_TEST
         scheduler = [(0, options['n_models'], 1)]
         model_class = partial(ConvNet_wide, n_channels, net_norm='none', im_size=(
             im_size, im_size), k=2, chopped_head=True)
@@ -332,7 +347,7 @@ class RFAD_Distillation():
                              ga_steps=options['ga_steps'], platt=options['platt'],
                              schedule=scheduler, save_location=self.save_path, samples_per_class=self.ipc, n_classes=n_classes,
                              learn_labels=options['learn_labels'], batch_size=1280, X_valid=X_valid, y_valid=y_valid,
-                             im_size=im_size, X_init=X_init, jit=options['jit'], seed=options['seed'], corruption=options['corruption'], whitening_mat=whitening_mat, from_loader=from_loader)
+                             n_channels=n_channels, im_size=im_size, X_init=X_init, jit=options['jit'], seed=options['seed'], corruption=options['corruption'], whitening_mat=whitening_mat, from_loader=from_loader)
 
 
 def get_inds_from_labels(images, labels, number_of_classes=100):
@@ -346,7 +361,6 @@ def get_inds_from_labels(images, labels, number_of_classes=100):
     ])
 
     return images[inds], labels[inds]
-
 
 
 if __name__ == '__main__':

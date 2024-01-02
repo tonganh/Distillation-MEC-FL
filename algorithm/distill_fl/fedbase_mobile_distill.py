@@ -1,22 +1,20 @@
+import logging
+import datetime
+from main_distill import logger
+import os
+from algorithm.distill_fl.distill_utils.distiller import Distiller
+from sklearn.model_selection import train_test_split
+from benchmark.toolkits import XYDataset
+import torch
+import numpy as np
+import math
+import copy
+from algorithm.fedbase import BasicServer, BasicClient
 import random
 from typing import List
 from utils import fmodule
 import sys
 sys.path.append('..')
-from  algorithm.fedbase import BasicServer, BasicClient
-import copy
-import math
-import numpy as np
-import torch
-from benchmark.toolkits import XYDataset
-from sklearn.model_selection import train_test_split
-from algorithm.distill_fl.distill_utils.distiller import Distiller
-import os
-from main_distill import logger
-
-import datetime
-import logging
-import os
 
 
 now = datetime.datetime.now()
@@ -52,12 +50,13 @@ logger_anhtn.addHandler(stream_handler)
 
 
 class BasicCloudServer(BasicServer):
-    def __init__(self, option, model ,clients,test_data = None):
-        super(BasicCloudServer, self).__init__(option, model, clients, test_data)
+    def __init__(self, option, model, clients, test_data=None):
+        super(BasicCloudServer, self).__init__(
+            option, model, clients, test_data)
         # self.clients = []
         self.model = model
         # print(clients)
-        
+
         self.mean_num_clients = option['num_clients']
         # self.std_num_clients = option['std_num_clients']
         self.current_num_clients = self.mean_num_clients
@@ -80,7 +79,7 @@ class BasicCloudServer(BasicServer):
 
         self.name_to_edge_mapping = {}
         self.unused_clients_queue = []
-        self.deleted_clients_name  = []
+        self.deleted_clients_name = []
 
         self.option = option
 
@@ -94,42 +93,41 @@ class BasicCloudServer(BasicServer):
         self.client_train_metrics = []
         self.client_valid_metrics = []
 
-
     def get_model_size(self, model):
         num_params = sum(p.numel() for p in model.parameters())
         # Mỗi tham số là một số thực dấu chấm động 32 bit, tức là 4 byte
         num_bytes = num_params * 4
         return num_bytes
-        
+
     def distill(self):
         print("First, distill data from clients' side")
         for client in self.clients:
             client.distill_data()
-    
+
     def get_clients_names(self):
         clients_name = [client.name for client in self.clients]
         return clients_name
 
-
     def delete_clients(self, count_remove_clients):
-        clients_after_delete = random.sample(self.clients, k=len(self.clients)-count_remove_clients)
+        clients_after_delete = random.sample(
+            self.clients, k=len(self.clients)-count_remove_clients)
         clients_name_initial = [client.name for client in self.clients]
         clients_name_deleted = [client.name for client in clients_after_delete]
-        
+
         # Tạo tập hợp các tên khách hàng duy nhất
         clients_name_initial_set = set(clients_name_initial)
         clients_name_deleted_set = set(clients_name_deleted)
-        
+
         # Lấy danh sách các tên khách hàng đã bị xóa
-        removed_clients_names = list(clients_name_initial_set - clients_name_deleted_set)
-        
+        removed_clients_names = list(
+            clients_name_initial_set - clients_name_deleted_set)
+
         print(f'Before delete, total clients is: {len(self.clients)}')
         self.clients = clients_after_delete
         print(f'After delete, total clients is: {len(self.clients)}')
         self.deleted_clients_name.extend(removed_clients_names)
         print(f'Name deleted client: {self.deleted_clients_name}')
         return removed_clients_names
-
 
     def run(self):
         """
@@ -154,7 +152,8 @@ class BasicCloudServer(BasicServer):
             self.global_lr_scheduler(round)
 
             logger.time_end('Time Cost')
-            if logger.check_if_log(round, self.eval_interval): logger.log(self)
+            if logger.check_if_log(round, self.eval_interval):
+                logger.log(self)
 
         print("=================End==================")
         logger.time_end('Total Time Cost')
@@ -171,25 +170,24 @@ class BasicCloudServer(BasicServer):
     #         new_client_list.append(client)
     #     self.clients = new_client_list
 
-
     def initialize_edges(self):
-        name_lists = ['e' + str(client_id) for client_id in range(self.num_edges)]
+        name_lists = ['e' + str(client_id)
+                      for client_id in range(self.num_edges)]
         self.edges = []
         self.edges_names = []
         for i in range(self.num_edges):
-            edge = BasicEdge(self.option, model = copy.deepcopy(self.model), name=name_lists[i], test_data = None)
+            edge = BasicEdge(self.option, model=copy.deepcopy(
+                self.model), name=name_lists[i], test_data=None)
             edge_name = name_lists[i]
             self.edges.append(edge)
             self.edges_names.append(edge_name)
             self.edge_to_name_mapping[edge] = edge_name
             self.name_to_edge_mapping[edge_name] = edge
-    
 
     def initialize_clients(self):
         for client in self.clients:
             self.client_to_name_mapping[client] = client.name
             self.name_to_client_mapping[client.name] = client
-
 
     def initialize_client_to_server(self):
         self.client_edge_mapping = {}
@@ -197,13 +195,13 @@ class BasicCloudServer(BasicServer):
         for edge in self.edges:
             # print(edge.name)
             self.edge_client_mapping[edge.name] = []
-            
+
         for client in self.clients:
-            client.current_edge_name = np.random.choice(self.edges_names,1)[0]
+            client.current_edge_name = np.random.choice(self.edges_names, 1)[0]
             self.client_edge_mapping[client.name] = client.current_edge_name
-            self.edge_client_mapping[client.current_edge_name].append(client.name)
-        
-    
+            self.edge_client_mapping[client.current_edge_name].append(
+                client.name)
+
     def update_client_server_mapping(self):
         # print(self.edges_names)
         # self.client_edge_mapping = {}
@@ -215,33 +213,35 @@ class BasicCloudServer(BasicServer):
             current_edge_name = self.client_edge_mapping[client.name]
             edge_index = self.edges_names.index(current_edge_name)
             # print("Old name" , current_edge_name)
-            if 0 < edge_index < self.num_edges -1 :
-                client_edge_moving_choice = self.edges_names[edge_index -1 : edge_index + 2]
+            if 0 < edge_index < self.num_edges - 1:
+                client_edge_moving_choice = self.edges_names[edge_index -
+                                                             1: edge_index + 2]
                 # print("Case 1: ", client_edge_moving_choice)
 
             elif edge_index == 0:
                 # print(self.edges_names[:2])
                 # print(self.edges_names[-1])
-                client_edge_moving_choice = [self.edges_names[-1]]  + self.edges_names[:2] 
+                client_edge_moving_choice = [
+                    self.edges_names[-1]] + self.edges_names[:2]
                 # print("Case 2: ", client_edge_moving_choice)
             else:
-                client_edge_moving_choice =  self.edges_names[-2:]  + [self.edges_names[0]] 
+                client_edge_moving_choice = self.edges_names[-2:] + [
+                    self.edges_names[0]]
                 # print("Case 3: ", client_edge_moving_choice)
 
-                
-            p = [self.p_move/2,1-self.p_move,self.p_move/2]
+            p = [self.p_move/2, 1-self.p_move, self.p_move/2]
 
             if client.name == 'Client010':
                 print(client_edge_moving_choice)
                 print(p)
 
-            new_edge_name = np.random.choice(client_edge_moving_choice, 1, p=p,replace = False)[0]
+            new_edge_name = np.random.choice(
+                client_edge_moving_choice, 1, p=p, replace=False)[0]
             # print("New name: ", new_edge_name)
             client.current_edge_name = new_edge_name
             self.client_edge_mapping[client.name] = client.current_edge_name
-            self.edge_client_mapping[client.current_edge_name].append(client.name)
-        
-
+            self.edge_client_mapping[client.current_edge_name].append(
+                client.name)
 
     # def update_client_list(self):
     #     filtered_client_list = []
@@ -279,13 +279,12 @@ class BasicCloudServer(BasicServer):
     #                 if client_name not in clients_names and client_name not in self.deleted_clients_name:
     #                     self.clients.append(client)
     #                     clients_names.append(client_name)
-                        
+
         # if len(self.clients) > 100:
         #     import pdb; pdb.set_trace()
 
     def get_current_num_clients(self):
         self.current_num_clients = np.random.randint()
-    
 
     def sample(self):
         """Sample the clients.
@@ -302,7 +301,8 @@ class BasicCloudServer(BasicServer):
         # collect all the active clients at this round and wait for at least one client is active and
         active_clients = []
         active_clients = self.clients
-        self.clients_per_round =  max(int(self.num_clients * self.option['proportion']), 1)
+        self.clients_per_round = max(
+            int(self.num_clients * self.option['proportion']), 1)
 
         # while(len(active_clients)<1):
         #     active_clients = [cid for cid in range(self.num_clients) if self.clients[cid].is_active()]
@@ -316,30 +316,32 @@ class BasicCloudServer(BasicServer):
             # print(self.clients_per_round)
             # print(len(self.clients))
             len_active_clients = len(active_clients)
-            self.clients_per_round =  max(int(len_active_clients * self.option['proportion']), 1)
+            self.clients_per_round = max(
+                int(len_active_clients * self.option['proportion']), 1)
             print('Number will select', self.clients_per_round)
             # import pdb; pdb.set_trace()
             if len_active_clients < self.clients_per_round:
-                import pdb; pdb.set_trace()
-            selected_clients = list(np.random.choice(active_clients,self.clients_per_round, replace=False))
+                import pdb
+                pdb.set_trace()
+            selected_clients = list(np.random.choice(
+                active_clients, self.clients_per_round, replace=False))
 
-        elif self.sample_option =='md':
+        elif self.sample_option == 'md':
             # the default setting that is introduced by FedProx
-            selected_clients = list(np.random.choice(all_clients, self.clients_per_round, replace=True, p=[nk / self.data_vol for nk in self.client_vols]))
+            selected_clients = list(np.random.choice(all_clients, self.clients_per_round, replace=True, p=[
+                                    nk / self.data_vol for nk in self.client_vols]))
         # drop the selected but inactive clients
-        selected_clients = list(set(active_clients).intersection(selected_clients))
+        selected_clients = list(
+            set(active_clients).intersection(selected_clients))
         return selected_clients
-
-
 
     def print_edges_info(self):
         print("Current number of edges: ", self.num_edges)
         for edge in self.edges:
             edge.print_edge_info()
-    
+
     # def print_client_info(self):
     #     for client in self.clients
-    
 
     def initialize(self):
         self.initialize_edges()
@@ -347,9 +349,6 @@ class BasicCloudServer(BasicServer):
         self.initialize_client_to_server()
         # self.assign_client_to_server()
         # self.initialize_clients_location_velocity()
-
-
-
 
     def communicate(self, edges):
         """
@@ -366,11 +365,12 @@ class BasicCloudServer(BasicServer):
             for edge in edges:
                 response_from_edge = self.communicate_with(edge)
                 packages_received_from_edges.append(response_from_edge)
-    
+
         else:
             # computing in parallel
             pool = ThreadPool(min(self.num_threads, len(edges)))
-            packages_received_from_edges = pool.map(self.communicate_with, edges)
+            packages_received_from_edges = pool.map(
+                self.communicate_with, edges)
             pool.close()
             pool.join()
         # count the clients not dropping
@@ -391,7 +391,7 @@ class BasicCloudServer(BasicServer):
         # if self.clients[client_id].is_drop(): return None
         reply = edge.reply()
         return reply
-    
+
     def pack(self):
         """
         Pack the necessary information for the client's local training.
@@ -402,7 +402,7 @@ class BasicCloudServer(BasicServer):
             a dict that only contains the global model as default.
         """
         return {
-            "model" : copy.deepcopy(self.model),
+            "model": copy.deepcopy(self.model),
         }
 
     def unpack(self, packages_received_from_edges):
@@ -414,19 +414,20 @@ class BasicCloudServer(BasicServer):
             models: a list of the locally improved model
             losses: a list of the losses of the global model on each training dataset
         """
-        edge_names = [cp['edge_name']  for cp in packages_received_from_edges]
+        edge_names = [cp['edge_name'] for cp in packages_received_from_edges]
         models = [cp["model"] for cp in packages_received_from_edges]
-        train_losses = [cp["train_loss"] for cp in packages_received_from_edges]
-        valid_losses = [cp["valid_loss"] for cp in packages_received_from_edges]
+        train_losses = [cp["train_loss"]
+                        for cp in packages_received_from_edges]
+        valid_losses = [cp["valid_loss"]
+                        for cp in packages_received_from_edges]
         train_acc = [cp["train_acc"] for cp in packages_received_from_edges]
         valid_acc = [cp["valid_acc"] for cp in packages_received_from_edges]
 
         return models, (edge_names, train_losses, valid_losses, train_acc, valid_acc)
 
 
-
 class BasicEdge(BasicClient):
-    def __init__(self, option, model, name = '', clients = [], test_data=None):
+    def __init__(self, option, model, name='', clients=[], test_data=None):
         super(BasicEdge, self).__init__(option, model, clients, test_data)
         self.name = name
         self.option = option
@@ -435,7 +436,7 @@ class BasicEdge(BasicClient):
         self.X_all = np.array([])
         self.y_all = np.array([])
 
-        self.X_train  = np.array([])
+        self.X_train = np.array([])
         self.y_train = np.array([])
         self.X_valid = np.array([])
         self.y_valid = np.array([])
@@ -444,22 +445,22 @@ class BasicEdge(BasicClient):
 
         self.train_data = None
         self.valid_data = None
-        self.clients_collected  = []
+        self.clients_collected = []
         self.total_transfer_size = 0
-
 
         self.limit_volume = 4000
         # self.list_clients = []
-    
+
     def split_data(self):
-        self.X_train, self.X_valid, self.y_train, self.y_valid = train_test_split(self.X_all, self.y_all, 
-                                                                                 test_size = 0.2,random_state=self.option['seed'])
+        self.X_train, self.X_valid, self.y_train, self.y_valid = train_test_split(self.X_all, self.y_all,
+                                                                                  test_size=0.2, random_state=self.option['seed'])
         # print("Split data")
         # print(self.X_train.shape, self.X_valid.shape, self.y_train.shape)
+
     def collect_distilled_data_from_client(self, clients: List[BasicClient]):
         # Update x_all and y_all by appending client's distill data, if client not already sent
         total_transfer_in_round = 0
-        clients_name = [client.name  for client in clients]
+        clients_name = [client.name for client in clients]
         # !tạm thời dừng
         # clients_name_collected = [ client_name for client_name in self.clients_collected]
         # print('clients_name_collected', clients_name_collected)
@@ -468,14 +469,16 @@ class BasicEdge(BasicClient):
         # print('clients_will_add', clients_will_add)
         for client in clients:
             if client.name not in self.clients_collected:
-                total_transfer_in_round   += client.total_size
+                total_transfer_in_round += client.total_size
                 if self.X_all.size == 0:
                     self.X_all = client.x_distill
                     self.y_all = client.y_distill
                     # print(self.X_all.shape, self.y_all)
                 else:
-                    self.X_all = np.concatenate([self.X_all, client.x_distill],axis = 0)
-                    self.y_all = np.concatenate([self.y_all, client.y_distill], axis = 0)
+                    self.X_all = np.concatenate(
+                        [self.X_all, client.x_distill], axis=0)
+                    self.y_all = np.concatenate(
+                        [self.y_all, client.y_distill], axis=0)
                     # print(self.X_all.shape, self.y_all)
                 self.clients_collected.append(client.name)
 
@@ -492,20 +495,21 @@ class BasicEdge(BasicClient):
 
                 # print("Clients collected", self.clients_collected)
 
-                # print(self.X_train, self.X_train.shape, type(self.X_train))  
-                # print(self.y_train.shape, type(self.y_train))   
+                # print(self.X_train, self.X_train.shape, type(self.X_train))
+                # print(self.y_train.shape, type(self.y_train))
 
-                # if not torch.is_tensor(self.X_train):                 
-                  
-                self.train_data = XYDataset(self.X_train, self.y_train, client_name=client.name)
-                self.valid_data = XYDataset(self.X_valid, self.y_valid, client_name=client.name)
+                # if not torch.is_tensor(self.X_train):
+
+                self.train_data = XYDataset(
+                    self.X_train, self.y_train, client_name=client.name)
+                self.valid_data = XYDataset(
+                    self.X_valid, self.y_valid, client_name=client.name)
 
                 # print(self.train_data, self.valid_data)
                 # self.clients_collected.append(client.name)
                 self.datavol = self.X_train.shape[0]
         self.total_transfer_size = total_transfer_in_round
 
-        
     def train(self):
         """
         Standard local training procedure. Train the transmitted model with local training dataset.
@@ -514,8 +518,10 @@ class BasicEdge(BasicClient):
         :return
         """
         self.model.train()
-        data_loader = self.calculator.get_data_loader(self.train_data, batch_size=self.batch_size)
-        optimizer = self.calculator.get_optimizer(self.optimizer_name, self.model, lr = self.learning_rate, weight_decay=self.weight_decay, momentum=self.momentum)
+        data_loader = self.calculator.get_data_loader(
+            self.train_data, batch_size=self.batch_size)
+        optimizer = self.calculator.get_optimizer(
+            self.optimizer_name, self.model, lr=self.learning_rate, weight_decay=self.weight_decay, momentum=self.momentum)
         for iter in range(self.epochs):
             for batch_id, batch_data in enumerate(data_loader):
                 self.model.zero_grad()
@@ -534,23 +540,26 @@ class BasicEdge(BasicClient):
             eval_metric: task specified evaluation metric
             loss: task specified loss
         """
-        dataset = self.train_data if dataflag=='train' else self.valid_data
+        dataset = self.train_data if dataflag == 'train' else self.valid_data
         if dataset is None:
-            print('Test in line Test - 512',self.name)
-            import pdb; pdb.set_trace()
+            print('Test in line Test - 512', self.name)
+            import pdb
+            pdb.set_trace()
         self.model.eval()
         loss = 0
         eval_metric = 0
         try:
-            data_loader = self.calculator.get_data_loader(dataset, batch_size=16)
-        except: 
+            data_loader = self.calculator.get_data_loader(
+                dataset, batch_size=16)
+        except:
             print(dataset.X, dataset.Y)
         for batch_id, batch_data in enumerate(data_loader):
 
-            bmean_eval_metric, bmean_loss = self.calculator.test(self.model, batch_data)
+            bmean_eval_metric, bmean_loss = self.calculator.test(
+                self.model, batch_data)
             loss += bmean_loss * len(batch_data[1])
             eval_metric += bmean_eval_metric * len(batch_data[1])
-        eval_metric =1.0 * eval_metric / len(dataset)
+        eval_metric = 1.0 * eval_metric / len(dataset)
         loss = 1.0 * loss / len(dataset)
         return eval_metric, loss
 
@@ -578,16 +587,15 @@ class BasicEdge(BasicClient):
         # print("Client evaluated the train losss")
         self.train()
         # print("Client trained the model")
-        eval_dict = {'train_loss': train_loss, 
-                      'valid_loss': valid_loss,
-                      'train_acc':train_acc,
-                      'valid_acc': valid_acc}
-        cpkg = self.pack( eval_dict)
+        eval_dict = {'train_loss': train_loss,
+                     'valid_loss': valid_loss,
+                     'train_acc': train_acc,
+                     'valid_acc': valid_acc}
+        cpkg = self.pack(eval_dict)
         # print("Client packed and finished")
         return cpkg
 
-
-    def pack(self, eval_dict ):
+    def pack(self, eval_dict):
         """
         Packing the package to be send to the server. The operations of compression
         of encryption of the package should be done here.
@@ -597,9 +605,8 @@ class BasicEdge(BasicClient):
         :return
             package: a dict that contains the necessary information for the server
         """
-        pkg = {'edge_name' : self.name,'model': self.model} | eval_dict
+        pkg = {'edge_name': self.name, 'model': self.model} | eval_dict
         return pkg
-
 
     def train_loss(self):
         """
@@ -633,9 +640,6 @@ class BasicEdge(BasicClient):
         """
         return self.test()[0]
 
-
-
-
     # def unpack(self, packages_received_from_clients):
     #     """
     #     Unpack the information from the received packages. Return models and losses as default.
@@ -653,16 +657,14 @@ class BasicEdge(BasicClient):
 
     #     return models, (train_losses, valid_losses, train_acc, valid_acc)
 
-
-
     # def update_list_clients(self,clients):
     #     self.list_clients = clients
 
-    
 
 class BasicMobileClient(BasicClient):
-    def __init__(self, option, name='', train_data=None, valid_data=None ):
-        super(BasicMobileClient, self).__init__(option, name, train_data, valid_data)
+    def __init__(self, option, name='', train_data=None, valid_data=None):
+        super(BasicMobileClient, self).__init__(
+            option, name, train_data, valid_data)
         # self.location = location
         # self.velocity = velocity
         self.option = option
@@ -670,41 +672,44 @@ class BasicMobileClient(BasicClient):
         self.y_distill = None
         self.current_edge_name = None
 
-        
         if 'mnist' in self.option['task'] or 'cifar10' in self.option['task']:
             self.num_classes = 10
-        elif  'cifar100' in self.option['task']:
+        elif 'cifar100' in self.option['task']:
             self.num_classes = 100
-        
+
         self.distill_iters = self.option['distill_iters']
         self.task_name = self.option['task']
-        
-        distill_path_dataset = os.path.join( f'fedtask/{self.task_name}/', self.option['distill_data_path'])
+
+        distill_path_dataset = os.path.join(
+            f'fedtask/{self.task_name}/', self.option['distill_data_path'])
         if not os.path.exists(distill_path_dataset):
             os.mkdir(distill_path_dataset)
-            
-        self.distill_save_path = os.path.join( f'fedtask/{self.task_name}/', self.option['distill_data_path'],str(self.option['distill_ipc']))
+
+        self.distill_save_path = os.path.join(
+            f'fedtask/{self.task_name}/', self.option['distill_data_path'], str(self.option['distill_ipc']))
 
         if not os.path.exists(self.distill_save_path):
-            os.mkdir(self.distill_save_path)      
-        self.distill_save_path = os.path.join(self.distill_save_path,f'{self.name}/')
+            os.mkdir(self.distill_save_path)
+        self.distill_save_path = os.path.join(
+            self.distill_save_path, f'{self.name}/')
         print("Path", self.distill_save_path)
-        # self.distill_save_path = os.path.join(self.distill_save_path, self.option['task'])  
+        # self.distill_save_path = os.path.join(self.distill_save_path, self.option['task'])
         if not os.path.exists(self.distill_save_path):
-            os.mkdir(self.distill_save_path)      
-        
+            os.mkdir(self.distill_save_path)
+
         if 'mnist' in self.option['task']:
-            self.dataset =  'MNIST'
+            self.dataset = 'MNIST'
         elif 'cifar10' in self.option['task']:
-            self.dataset  = 'CIFAR10'
+            self.dataset = 'CIFAR10'
         elif 'cifar100' in self.option['task']:
             self.dataset = 'CIFAR100'
         self.ipc = self.option['distill_ipc']
-        self.distiller = Distiller(ipc=self.ipc, iteration=self.distill_iters, dataset = self.dataset, save_path = self.distill_save_path)
+        self.distiller = Distiller(ipc=self.ipc, iteration=self.distill_iters,
+                                   dataset=self.dataset, save_path=self.distill_save_path)
         # self.mean_velocity = mean_velocity
         # self.std_velocity = std_velocity
         # self.current_velocity = mean_velocity
-    
+
     # def get_current_velocity(self):
     #     self.current_velocity = np.random.randint(low=self.mean_velocity - self.std_velocity, high=self.mean_velocity + self.std_velocity, size = 1)[0]
 
@@ -716,7 +721,7 @@ class BasicMobileClient(BasicClient):
 
     def get_current_edge(self):
         return self.current_edge_name
-    
+
     def distill_data(self):
         message = f"Distilling data from client: {self.name}"
         print(message)
@@ -725,18 +730,18 @@ class BasicMobileClient(BasicClient):
         print(f'Client name: {self.name}')
         print(f'Check data class for each client. Client: {self.name}')
         print(set(y_train))
-        logger_anhtn.info(f'Check data class for each client. Client: {self.name}')
+        logger_anhtn.info(
+            f'Check data class for each client. Client: {self.name}')
         logger_anhtn.info(set(y_train))
         # print("Data from client"x_val,y_val)
-        self.distiller.distill(X_TRAIN_RAW  = x_train, LABELS_TRAIN = y_train,X_TEST_RAW= x_val,
-                               LABELS_TEST= y_val, additional_message=message)
-    
+        self.distiller.distill(X_TRAIN_RAW=x_train, LABELS_TRAIN=y_train, X_TEST_RAW=x_val,
+                               LABELS_TEST=y_val, additional_message=message)
+
     def load_distill_data(self):
-        self.x_distill = torch.load(os.path.join(self.distill_save_path,'x_distill.pt')).detach().cpu().numpy()
-        self.y_distill = torch.load(os.path.join(self.distill_save_path,'y_distill.pt')).detach().cpu().numpy()
+        self.x_distill = torch.load(os.path.join(
+            self.distill_save_path, 'x_distill.pt')).detach().cpu().numpy()
+        self.y_distill = torch.load(os.path.join(
+            self.distill_save_path, 'y_distill.pt')).detach().cpu().numpy()
 
         # print(self.x_distill.shape, self.y_distill)
         # print(type(self.x_distill), type(self.x_distill))
-
-
-

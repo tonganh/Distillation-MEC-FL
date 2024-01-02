@@ -84,7 +84,7 @@ jax_config.update('jax_enable_x64', True)
 class Distiller():
     def __init__(self, itr=300, ARCHITECTURE='FC', DEPTH=1, WIDTH=1024,
                  PARAMETERIZATION='ntk', DATASET='cifar10', LEARNING_RATE=4e-2,
-                 SUPPORT_SIZE=100, TARGET_BATCH_SIZE=5000, LEARN_LABELS=False,save_path='results_kip', ipc=1):
+                 SUPPORT_SIZE=100, TARGET_BATCH_SIZE=5000, LEARN_LABELS=False, save_path='results_kip', ipc=1):
         self.itr = itr
         self.ARCHITECTURE = ARCHITECTURE
         self.DEPTH = DEPTH
@@ -98,11 +98,11 @@ class Distiller():
         self.save_path = save_path
         self.ipc = ipc
 
-
-    def save_image_synthetic(self, sample_raw: np.ndarray, sample_init: np.ndarray, sample_final:np.ndarray, num_classes: int):
+    def save_image_synthetic(self, sample_raw: np.ndarray, sample_init: np.ndarray, sample_final: np.ndarray, num_classes: int):
         save_path = f'{self.save_path}/synthetic.png'
         fig = plt.figure(figsize=(33, 10))
-        fig.suptitle('Image comparison.\n\nRow 1: Original uint8.  Row2: Original normalized.  Row 3: KIP learned images.', fontsize=16, y=1.02)
+        fig.suptitle(
+            'Image comparison.\n\nRow 1: Original uint8.  Row2: Original normalized.  Row 3: KIP learned images.', fontsize=16, y=1.02)
 
         for i, img in enumerate(sample_raw):
             plt.subplot(3, num_classes, i+1)
@@ -122,9 +122,6 @@ class Distiller():
         plt.savefig(save_path)
         logger.info(f'Done save image to {save_path}')
         # print(f'Done save image to {save_path}')
-
-
-
 
     def get_torch_vision_dataset(sellf, name):
         path_dataset = './dataset'
@@ -356,20 +353,20 @@ class Distiller():
         # if min_value_in_class < 20:
         #     new_classes = [c for c in classes if c != class_have_min_value]
         #     classes = new_classes
-        
+
         min_value_in_class = 999
         for c in classes:
             size_of_this_class = np.where(labels == c)[0].size
             if size_of_this_class < min_value_in_class:
                 min_value_in_class = size_of_this_class
-        
+
         # # Gán giá trị cho X và làm tròn
         # if n_per_class > class_have_min_value:
         #     n_per_class = round((2/3) * min_value_in_class)
         # # !code cũ
         # # import pdb; pdb.set_trace()
         # n_per_class = round((2/3) * min_value_in_class)
-        
+
         # if n_per_class > class_have_min_value:
         #     n_per_class = round((2/3) * min_value_in_class)
         # # if kwargs.get('distill_ipc') is not None:
@@ -392,7 +389,7 @@ class Distiller():
         ])
         # return (1, 1) + tuple(
         #     [arr.copy() for arr in arrays])
-        return (inds, classes,labels[inds].copy()) + tuple(
+        return (inds, classes, labels[inds].copy()) + tuple(
             [arr[inds].copy() for arr in arrays])
 
     def make_loss_acc_fn(self, kernel_fn):
@@ -406,7 +403,7 @@ class Distiller():
             k_ss_reg = (k_ss + jnp.abs(reg) * jnp.trace(k_ss) *
                         jnp.eye(k_ss.shape[0]) / k_ss.shape[0])
             pred = jnp.dot(k_ts, sp.linalg.solve(
-                k_ss_reg, y_support, sym_pos=True))
+                k_ss_reg, y_support))
 
             mse_loss = 0.5*jnp.mean((pred - y_target) ** 2)
             acc = jnp.mean(jnp.argmax(pred, axis=1) ==
@@ -435,6 +432,7 @@ class Distiller():
     #         return mse_loss, acc
 
     #     return loss_acc_fn
+
 
     def get_update_functions(self, init_params, kernel_fn, lr):
         opt_init, opt_update, get_params = optimizers.adam(lr)
@@ -496,14 +494,12 @@ class Distiller():
         classes_in_input = np.unique(input_label)
         for c in classes_in_input:
             total_data_in_this_class = np.where(input_label == c)[0].size
-            logger.info(f'c: {c} and total_data_in_this_class: {total_data_in_this_class}')
-
-
-
+            logger.info(
+                f'c: {c} and total_data_in_this_class: {total_data_in_this_class}')
 
     def write_data_to_csv(self, path, test_loss_arr, train_loss_arr, test_acc_arr, train_acc_arr):
         # Column names
-        
+
         columns = ['test_loss', 'train_loss', 'test_acc', 'train_acc']
 
         # Prepare data rows
@@ -519,7 +515,7 @@ class Distiller():
             # Write data rows
             writer.writerows(rows)
 
-    def distill(self, log_freq=5, seed=1,  X_TRAIN_RAW=None, LABELS_TRAIN=None, X_TEST_RAW=None, LABELS_TEST=None,additional_message = None):
+    def distill(self, log_freq=5, seed=1,  X_TRAIN_RAW=None, LABELS_TRAIN=None, X_TEST_RAW=None, LABELS_TEST=None, additional_message=None):
 
         if isinstance(X_TRAIN_RAW, torch.Tensor):
             X_TRAIN_RAW = X_TRAIN_RAW.numpy()
@@ -555,7 +551,7 @@ class Distiller():
 
         channel_means, channel_stds = self.get_normalization_data(X_TRAIN_RAW)
 
-        _, _,labels_init, x_init_raw, y_init = self.class_balanced_sample(
+        _, _, labels_init, x_init_raw, y_init = self.class_balanced_sample(
             self.SUPPORT_SIZE, LABELS_TRAIN, X_TRAIN_RAW, Y_TRAIN, seed=seed, plot=True, distill_ipc=True)
         x_init = self.normalize(
             x_init_raw, channel_means, channel_stds)
@@ -579,14 +575,14 @@ class Distiller():
 
         test_loss_arr.append(test_loss)
         test_acc_arr.append(test_acc)
-        
+
         logger.info(f'initial test loss: {test_loss}')
         logger.info(f'initial test acc: {test_acc}')
         best_data_synthetic = None
         best_val_result = -999
         for i in range(1, self.itr+1):
             # full batch gradient descent
-            _, _, _,x_target_batch, y_target_batch = self.class_balanced_sample(
+            _, _, _, x_target_batch, y_target_batch = self.class_balanced_sample(
                 self.TARGET_BATCH_SIZE, LABELS_TRAIN, X_TRAIN, Y_TRAIN, plot=True)
             opt_state, aux = update_fn(
                 i, opt_state, params, x_target_batch, y_target_batch)
@@ -597,7 +593,6 @@ class Distiller():
                 test_loss, (test_acc, y_pred, y_target) = loss_acc_fn(
                     params['x'], params['y'], X_TEST, Y_TEST)
 
-
                 if test_acc > best_val_result:
                     logger.info(additional_message)
                     logger.info(f'----step {i}:')
@@ -607,13 +602,12 @@ class Distiller():
                     train_acc_arr.append(train_acc)
                     test_loss_arr.append(test_loss)
                     test_acc_arr.append(test_acc)
-                    
+
                     best_val_result = test_acc
                     # x_tensor = torch.tensor(params['x'])
                     best_data_synthetic = params
                     x_np = np.array(params['x'])
                     y_prob = np.array(params['y'])
-                    breakpoint()
                     y_np = np.argmax(y_prob, axis=1)
                     # convert ra 1 label cụ thể
                     # logger.info(f'x_np {x_np}')
@@ -628,17 +622,17 @@ class Distiller():
                 # test_loss, test_acc = loss_acc_fn(
                 #     params['x'], params['y'], X_TEST, Y_TEST)
 
-
-                
                 # logger.info(f'test loss {test_loss}')
                 # logger.info(f'test acc {test_acc}')
                 # print('test loss:', test_loss)
                 # print('test acc:', test_acc)
         # classification_report
-        self.write_data_to_csv(f'{self.save_path}/result.csv', test_loss_arr=test_loss_arr, train_loss_arr=train_loss_arr,test_acc_arr=test_acc_arr, train_acc_arr=train_acc_arr )
-        _, classes_response,_, sample_raw, sample_init, sample_final = self.class_balanced_sample(
-        10, params_init_raw['y'], params_init_raw['x'], params_init['x'], best_data_synthetic['x'], seed=3, save_img_mode=True)
-        self.save_image_synthetic(sample_raw, sample_init, sample_final,len(classes_response))
+        self.write_data_to_csv(f'{self.save_path}/result.csv', test_loss_arr=test_loss_arr,
+                               train_loss_arr=train_loss_arr, test_acc_arr=test_acc_arr, train_acc_arr=train_acc_arr)
+        _, classes_response, _, sample_raw, sample_init, sample_final = self.class_balanced_sample(
+            10, params_init_raw['y'], params_init_raw['x'], params_init['x'], best_data_synthetic['x'], seed=3, save_img_mode=True)
+        self.save_image_synthetic(
+            sample_raw, sample_init, sample_final, len(classes_response))
         # return best_data_synthetic['x'],best_data_synthetic['y']
 
         return params, params_init, params_init_raw
@@ -699,7 +693,7 @@ class Distiller():
         labels = params_final['y']
         # print(labels.shape)
         number_class_get_and_plot = 10
-        _, _,_, sample_raw, sample_init, sample_final = self.class_balanced_sample(
+        _, _, _, sample_raw, sample_init, sample_final = self.class_balanced_sample(
             number_class_get_and_plot, params_init_raw['y'], params_init_raw['x'], params_init['x'], params_final['x'], seed=3, plot=True)
         class_names = ['airplane', 'automobile', 'bird', 'cat',
                        'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
@@ -730,5 +724,6 @@ class Distiller():
 
 
 if __name__ == "__main__":
-    distiller = Distiller(itr=300, TARGET_BATCH_SIZE=5000, SUPPORT_SIZE=100, ARCHITECTURE='Conv')
+    distiller = Distiller(itr=300, TARGET_BATCH_SIZE=5000,
+                          SUPPORT_SIZE=100, ARCHITECTURE='Conv')
     distiller.run()
