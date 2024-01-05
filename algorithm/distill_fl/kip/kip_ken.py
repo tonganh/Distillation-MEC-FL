@@ -80,6 +80,19 @@ jax_config.update('jax_enable_x64', True)
 # #! @param {'type': bool}; whether to optimize over support labels during training
 # LEARN_LABELS = False
 
+def get_number_classes_with_dataset(name_dataset):
+    if name_dataset.lower() == 'cifar10':
+        return 10
+    elif name_dataset.lower() == 'cifar100':
+        return 100
+    elif name_dataset.lower() == 'mnist':
+        return 10
+    elif name_dataset.lower() == 'svhn_cropped':
+        return 10
+    else:
+        raise NotImplementedError(
+            f'Unrecognized architecture {name_dataset}')
+
 
 class Distiller():
     def __init__(self, itr=300, ARCHITECTURE='FC', DEPTH=1, WIDTH=1024,
@@ -97,6 +110,7 @@ class Distiller():
         self.LEARN_LABELS = LEARN_LABELS
         self.save_path = save_path
         self.ipc = ipc
+        self.number_classes = get_number_classes_with_dataset(DATASET)
 
     def save_image_synthetic(self, sample_raw: np.ndarray, sample_init: np.ndarray, sample_final: np.ndarray, num_classes: int):
         save_path = f'{self.save_path}/synthetic.png'
@@ -433,7 +447,6 @@ class Distiller():
 
     #     return loss_acc_fn
 
-
     def get_update_functions(self, init_params, kernel_fn, lr):
         opt_init, opt_update, get_params = optimizers.adam(lr)
         opt_state = opt_init(init_params)
@@ -528,6 +541,7 @@ class Distiller():
 
         if isinstance(LABELS_TEST, torch.Tensor):
             LABELS_TEST = LABELS_TEST.numpy()
+
         print('Labels train')
         self.logging_input_dataset(LABELS_TRAIN)
         print('Labels test')
@@ -543,7 +557,7 @@ class Distiller():
         X_TRAIN, X_TEST = self.normalize(X_TRAIN_RAW, channel_means, channel_stds), self.normalize(
             X_TEST_RAW, channel_means, channel_stds)
         Y_TRAIN, Y_TEST = self.one_hot(
-            LABELS_TRAIN, 10), self.one_hot(LABELS_TEST, 10)
+            LABELS_TRAIN, self.number_classes), self.one_hot(LABELS_TEST, self.number_classes)
 
         _, _, kernel_fn = self.get_kernel_fn(
             self.ARCHITECTURE, self.DEPTH, self.WIDTH, self.PARAMETERIZATION)
@@ -659,7 +673,6 @@ class Distiller():
         X_TRAIN_RAW, LABELS_TRAIN, X_TEST_RAW, LABELS_TEST = self.get_torch_vision_dataset_not_reshape(
             name='cifar10')
 
-        breakpoint()
         number_dataset_need_get = 500
         print('Start line 332')
         # _, _, LABELS_TRAIN, X_TRAIN_RAW = self.class_balanced_sample(

@@ -262,10 +262,10 @@ class MobileClient(BasicMobileClient):
 
         if 'mnist' in self.option['task']:
             self.dataset = 'MNIST'
-        elif 'cifar10' in self.option['task']:
-            self.dataset = 'CIFAR10'
         elif 'cifar100' in self.option['task']:
             self.dataset = 'CIFAR100'
+        elif 'cifar10' in self.option['task']:
+            self.dataset = 'CIFAR10'
         self.distiller = Distiller(SUPPORT_SIZE=self.support_size, TARGET_BATCH_SIZE=10, itr=self.distill_iters, DATASET=self.dataset,
                                    save_path=self.distill_save_path, ipc=self.ipc, ARCHITECTURE=self.option['architec_KIP'], DEPTH=self.option['depth_KIP'])
 
