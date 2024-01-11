@@ -697,12 +697,16 @@ class BasicMobileClient(BasicClient):
         if not os.path.exists(self.distill_save_path):
             os.mkdir(self.distill_save_path)
 
-        if 'mnist' in self.option['task']:
+        if 'fashion_mnist' in self.option['task']:
+            self.dataset = 'Fashion_MNIST'
+        elif 'mnist' in self.option['task']:
             self.dataset = 'MNIST'
         elif 'cifar10' in self.option['task']:
             self.dataset = 'CIFAR10'
         elif 'cifar100' in self.option['task']:
             self.dataset = 'CIFAR100'
+        elif 'svhn' in self.option['task']:
+            self.dataset = 'SVHN'
         self.ipc = self.option['distill_ipc']
         self.distiller = Distiller(ipc=self.ipc, iteration=self.distill_iters,
                                    dataset=self.dataset, save_path=self.distill_save_path)

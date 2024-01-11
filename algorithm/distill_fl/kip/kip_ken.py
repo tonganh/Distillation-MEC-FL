@@ -87,7 +87,9 @@ def get_number_classes_with_dataset(name_dataset):
         return 100
     elif name_dataset.lower() == 'mnist':
         return 10
-    elif name_dataset.lower() == 'svhn_cropped':
+    elif name_dataset.lower() == 'fashion_mnist':
+        return 10
+    elif name_dataset.lower() == 'svhn':
         return 10
     else:
         raise NotImplementedError(
@@ -95,7 +97,7 @@ def get_number_classes_with_dataset(name_dataset):
 
 
 class Distiller():
-    def __init__(self, itr=300, ARCHITECTURE='FC', DEPTH=1, WIDTH=1024,
+    def __init__(self, itr=2000, ARCHITECTURE='FC', DEPTH=1, WIDTH=1024,
                  PARAMETERIZATION='ntk', DATASET='cifar10', LEARNING_RATE=4e-2,
                  SUPPORT_SIZE=100, TARGET_BATCH_SIZE=5000, LEARN_LABELS=False, save_path='results_kip', ipc=1):
         self.itr = itr
@@ -529,51 +531,9 @@ class Distiller():
             # Write data rows
             writer.writerows(rows)
 
-    def augmentation_data(self, X_TRAIN_RAW, LABELS_TRAIN):
-        # Compose augmentation transforms
-        transform = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(15),
-            transforms.ColorJitter(
-                brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
-            # Add more augmentations as needed
-        ])
-
-        # Group images by class
-        images_by_class = {}
-        for i, label in enumerate(LABELS_TRAIN):
-            if label not in images_by_class:
-                images_by_class[label] = []
-            images_by_class[label].append(
-                X_TRAIN_RAW[i].unsqueeze(0))  # Add batch dimension
-
-        # Augment images for each class until they have at least 50 images
-        augmented_images = []
-        augmented_labels = []
-        for label, images in images_by_class.items():
-            while len(images) < 50:
-                image_to_augment = images[torch.randint(len(images), (1,))]
-                augmented_image = transform(image_to_augment.squeeze(0))
-                augmented_images.append(augmented_image.unsqueeze(0))
-                # Add batch dimension to label
-                augmented_labels.append(label.unsqueeze(0))
-                images.append(augmented_image.unsqueeze(0))
-
-        # Combine original and augmented data
-        # print('Raw',X_TRAIN_RAW.shape)
-
-        X_TRAIN_AUGMENTED = torch.cat([X_TRAIN_RAW] + augmented_images)
-        # print('Augmented',X_TRAIN_AUGMENTED.shape)
-        LABELS_TRAIN_AUGMENTED = torch.cat(
-            [LABELS_TRAIN] + augmented_labels, dim=0)
-
-        return X_TRAIN_AUGMENTED, LABELS_TRAIN_AUGMENTED
-
     def distill(self, log_freq=5, seed=1,  X_TRAIN_RAW=None, LABELS_TRAIN=None, X_TEST_RAW=None, LABELS_TEST=None, additional_message=None):
-
         # X_TRAIN_RAW, LABELS_TRAIN = self.augmentation_data(
         #     X_TRAIN_RAW, LABELS_TRAIN)
-
         if isinstance(X_TRAIN_RAW, torch.Tensor):
             X_TRAIN_RAW = X_TRAIN_RAW.numpy()
 

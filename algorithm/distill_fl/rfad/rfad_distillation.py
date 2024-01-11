@@ -312,7 +312,13 @@ class RFAD_Distillation():
         if self.dataset == 'mnist':
             im_size = 28
             n_channels = 1
+        if self.dataset == 'fashion_mnist':
+            im_size = 28
+            n_channels = 1
         if self.dataset == 'cifar100':
+            im_size = 32
+            n_channels = 3
+        if self.dataset == 'svhn':
             im_size = 32
             n_channels = 3
 

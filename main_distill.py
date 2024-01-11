@@ -83,6 +83,9 @@ class MyLogger(flw.Logger):
             server.option['proportion'],
             server.option['p_move'],
             server.option['edge_update_frequency'])
+        if server.option['algorithm'] == 'fed_distill_kip':
+            path_save_data = path_save_data + \
+                '/{}'.format(server.option['architec_KIP'])
 
         if not os.path.exists(path_save_data):
             os.makedirs(path_save_data)
