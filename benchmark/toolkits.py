@@ -474,6 +474,8 @@ class DefaultTaskGen(BasicTaskGen):
             local_datas = self.divide_data_balance(num_local_class=2)
         elif self.dist_id == 8:
             local_datas = self.divide_data_balance_anhtn(num_local_class=2)
+        elif self.dist_id == 9:
+            local_datas = self.divide_data_balance_anhtn(num_local_class=50)
 
         return local_datas
 
