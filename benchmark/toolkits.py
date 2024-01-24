@@ -30,6 +30,7 @@ import os
 import ssl
 from torch.utils.data import Dataset, DataLoader
 import torch
+from sklearn.metrics import classification_report
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
@@ -73,7 +74,7 @@ class BasicTaskGen:
     _TYPE_DATASET = ['2DImage', '3DImage',
                      'Text', 'Sequential', 'Graph', 'Tabular']
 
-    def __init__(self, benchmark, dist_id, skewness, rawdata_path, seed=0):
+    def __init__(self, benchmark, dist_id, skewness, rawdata_path, seed=0, number_class_per_client=2):
         self.benchmark = benchmark
         self.rootpath = './fedtask'
         if not os.path.exists(self.rootpath):
@@ -85,6 +86,7 @@ class BasicTaskGen:
         self.skewness = 0 if dist_id == 0 else skewness
         self.num_clients = -1
         self.seed = seed
+        self.number_class_per_client = number_class_per_client
         set_random_seed(self.seed)
 
     def run(self):
@@ -114,6 +116,8 @@ class BasicTaskGen:
         """Create task name and return it."""
         taskname = '_'.join([self.benchmark, 'cnum' + str(self.num_clients), 'dist' + str(
             self.dist_id), 'skew' + str(self.skewness).replace(" ", ""), 'seed'+str(self.seed)])
+        if self.benchmark == 'cifar100' or self.benchmark == 'octmnist':
+            taskname += '_classperclient' + str(self.number_class_per_client)
         return taskname
 
     def get_client_names(self):
@@ -135,9 +139,9 @@ class BasicTaskGen:
 
 
 class DefaultTaskGen(BasicTaskGen):
-    def __init__(self, benchmark, dist_id, skewness, rawdata_path, num_clients=1, minvol=10, seed=0):
+    def __init__(self, benchmark, dist_id, skewness, rawdata_path, num_clients=1, minvol=10, seed=0, number_class_per_client=2):
         super(DefaultTaskGen, self).__init__(
-            benchmark, dist_id, skewness, rawdata_path, seed)
+            benchmark, dist_id, skewness, rawdata_path, seed, number_class_per_client)
         self.minvol = minvol
         self.num_classes = -1
         self.train_data = None
@@ -148,6 +152,7 @@ class DefaultTaskGen(BasicTaskGen):
         self.taskpath = os.path.join(self.rootpath, self.taskname)
         self.save_data = self.XYData_to_json
         self.label_after_sort_case3 = None
+        self.number_class_per_client = number_class_per_client
         self.datasrc = {
             'lib': None,
             'class_name': None,
@@ -471,11 +476,14 @@ class DefaultTaskGen(BasicTaskGen):
             local_datas = np.split(d_idxs, proportions)
 
         elif self.dist_id == 7:
-            local_datas = self.divide_data_balance(num_local_class=2)
+            local_datas = self.divide_data_balance(
+                num_local_class=self.number_class_per_client)
         elif self.dist_id == 8:
-            local_datas = self.divide_data_balance_anhtn(num_local_class=2)
+            local_datas = self.divide_data_balance_anhtn(
+                num_local_class=self.number_class_per_client)
         elif self.dist_id == 9:
-            local_datas = self.divide_data_balance_anhtn(num_local_class=50)
+            local_datas = self.divide_data_balance_anhtn(
+                num_local_class=self.number_class_per_client)
 
         return local_datas
 
@@ -539,7 +547,6 @@ class DefaultTaskGen(BasicTaskGen):
                     'x': [self.train_data['x'][did] for did in valid_cidxs[cid]], 'y': [self.train_data['y'][did] for did in valid_cidxs[cid]]
                 }
             }
-
         with open(os.path.join(self.taskpath, 'data.json'), 'w') as outf:
             ujson.dump(feddata, outf)
         return

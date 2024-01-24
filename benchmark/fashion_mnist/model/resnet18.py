@@ -136,6 +136,7 @@ class Model(FModule):
         output = self.conv5_x(output)
         output = self.avg_pool(output)
         output = output.view(output.size(0), -1)
+        # output = nn.Dropout(p=0.5)(output)  # Dropout added here
         output = self.fc(output)
         return output
 

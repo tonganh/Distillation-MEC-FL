@@ -91,6 +91,8 @@ def get_number_classes_with_dataset(name_dataset):
         return 10
     elif name_dataset.lower() == 'svhn':
         return 10
+    elif name_dataset.lower() == 'octmnist':
+        return 4
     else:
         raise NotImplementedError(
             f'Unrecognized architecture {name_dataset}')
@@ -136,7 +138,7 @@ class Distiller():
             plt.imshow(np.squeeze(img))
 
         plt.savefig(save_path)
-        logger.info(f'Done save image to {save_path}')
+        # logger.info(f'Done save image to {save_path}')
         # print(f'Done save image to {save_path}')
 
     def get_torch_vision_dataset(sellf, name):

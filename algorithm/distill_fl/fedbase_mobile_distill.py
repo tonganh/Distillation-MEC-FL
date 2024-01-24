@@ -699,14 +699,16 @@ class BasicMobileClient(BasicClient):
 
         if 'fashion_mnist' in self.option['task']:
             self.dataset = 'Fashion_MNIST'
-        elif 'mnist' in self.option['task']:
+        if 'mnist' in self.option['task']:
             self.dataset = 'MNIST'
-        elif 'cifar10' in self.option['task']:
+        if 'cifar10' in self.option['task']:
             self.dataset = 'CIFAR10'
-        elif 'cifar100' in self.option['task']:
+        if 'cifar100' in self.option['task']:
             self.dataset = 'CIFAR100'
-        elif 'svhn' in self.option['task']:
+        if 'svhn' in self.option['task']:
             self.dataset = 'SVHN'
+        if 'octmnist' in self.option['task']:
+            self.dataset = 'OCTMNIST'
         self.ipc = self.option['distill_ipc']
         self.distiller = Distiller(ipc=self.ipc, iteration=self.distill_iters,
                                    dataset=self.dataset, save_path=self.distill_save_path)
@@ -736,7 +738,7 @@ class BasicMobileClient(BasicClient):
         print(set(y_train))
         logger_anhtn.info(
             f'Check data class for each client. Client: {self.name}')
-        logger_anhtn.info(set(y_train))
+        # logger_anhtn.info(set(y_train))
         # print("Data from client"x_val,y_val)
         self.distiller.distill(X_TRAIN_RAW=x_train, LABELS_TRAIN=y_train, X_TEST_RAW=x_val,
                                LABELS_TEST=y_val, additional_message=message)

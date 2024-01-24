@@ -298,14 +298,16 @@ class MobileClient(BasicMobileClient):
 
         if 'fashion_mnist' in self.option['task']:
             self.dataset = 'Fashion_MNIST'
-        elif 'mnist' in self.option['task']:
+        if 'mnist' in self.option['task']:
             self.dataset = 'MNIST'
-        elif 'cifar10' in self.option['task']:
+        if 'cifar10' in self.option['task']:
             self.dataset = 'CIFAR10'
-        elif 'svhn' in self.option['task']:
+        if 'svhn' in self.option['task']:
             self.dataset = 'SVHN'
-        elif 'cifar100' in self.option['task']:
+        if 'cifar100' in self.option['task']:
             self.dataset = 'CIFAR100'
+        if 'octmnist' in self.option['task']:
+            self.dataset = 'OCTMNIST'
 
         self.distill_options = {
             'coreset': False, 'corruption': 0, 'dataset': 'cifar10', 'ga_steps': 1,

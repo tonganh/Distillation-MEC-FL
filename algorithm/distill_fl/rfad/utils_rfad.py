@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import math
 
+
 def mapping_data_with_index(array_input):
     data_mapping = {}
     uq_data = np.unique(array_input)
@@ -18,6 +19,7 @@ def mapping_data_with_index(array_input):
         a_convert = np.array(a_convert)
         a_convert = torch.from_numpy(a_convert).long()
     return a_convert, reversed_data_mapping
+
 
 def get_random_features(X_train, model_class, n_models, n_features_per_model, batch_size=300, fixed_seed=None, other_datasets=[], featurewise_normalize=False, elementwise_normalize=False, device='cuda:0', return_models=False):
     created_feature_vec = False
@@ -85,7 +87,7 @@ def get_random_features(X_train, model_class, n_models, n_features_per_model, ba
     return X_train_features, other_features
 
 
-def one_hot(a, num_classes,check_debug=False):
+def one_hot(a, num_classes, check_debug=False):
     if check_debug:
         breakpoint()
     if isinstance(a, torch.Tensor):
@@ -147,7 +149,7 @@ def get_best_finite_hypers(ds, ss, use_label_scale=True, use_instance=False, fro
 
     elif use_label_scale:
         if ss == 1:
-            if ds == 'mnist':
+            if ds == 'mnist' or 'octmnist':
                 lr = 1e-3
                 ls = 8
                 wd = 1e-3
@@ -168,7 +170,7 @@ def get_best_finite_hypers(ds, ss, use_label_scale=True, use_instance=False, fro
                 ls = 8
                 wd = 0
         elif ss == 10:
-            if ds == 'mnist':
+            if ds == 'mnist' or 'octmnist':
                 lr = 1e-2
                 ls = 8
                 wd = 1e-3
@@ -189,7 +191,7 @@ def get_best_finite_hypers(ds, ss, use_label_scale=True, use_instance=False, fro
                 ls = 2
                 wd = 0
         elif ss == 50:
-            if ds == 'mnist':
+            if ds == 'mnist' or 'octmnist':
                 lr = 1e-2
                 ls = 8
                 wd = 0
@@ -209,7 +211,7 @@ def get_best_finite_hypers(ds, ss, use_label_scale=True, use_instance=False, fro
         ls = 1
 
         if ss == 1:
-            if ds == 'mnist':
+            if ds == 'mnist' or 'octmnist':
                 lr = 1e-5
                 wd = 0
             elif ds == 'fashion':
@@ -225,7 +227,7 @@ def get_best_finite_hypers(ds, ss, use_label_scale=True, use_instance=False, fro
                 lr = 1e-2
                 wd = 0
         elif ss == 10:
-            if ds == 'mnist':
+            if ds == 'mnist' or 'octmnist':
                 lr = 1e-4
                 wd = 1e-3
             elif ds == 'fashion':
@@ -241,7 +243,7 @@ def get_best_finite_hypers(ds, ss, use_label_scale=True, use_instance=False, fro
                 lr = 1e-2
                 wd = 0
         elif ss == 50:
-            if ds == 'mnist':
+            if ds == 'mnist' or 'octmnist':
                 lr = 1e-3
                 wd = 0
             elif ds == 'fashion':
