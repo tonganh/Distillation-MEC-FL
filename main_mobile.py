@@ -74,52 +74,27 @@ class MyLogger(flw.Logger):
         path_as_freq = '{}/edge_freq_{}_remove_{}'.format(
             path_as_task, server.option['edge_update_frequency'], server.option['remove_client'])
 
-        folder_name_algor_expr = '{}_w_algox{}_vx{}_freqx{}_num_edgex{}_num_epochsx{}_proportionx{}_pmove_{}'.format(path_as_freq,
-                                                                                                                     server.option[
-                                                                                                                         'global_ensemble_weights'],
-                                                                                                                     server.option[
-                                                                                                                         'algorithm'],
-                                                                                                                     server.option[
-                                                                                                                         'mean_velocity'],
-                                                                                                                     server.option[
-                                                                                                                         'edge_update_frequency'],
-                                                                                                                     server.option[
-                                                                                                                         'num_edges'],
-                                                                                                                     server.option[
-                                                                                                                         'num_epochs'],
-                                                                                                                     server.option[
-                                                                                                                         'proportion'],
-                                                                                                                     server.option['pmove']
-                                                                                                                     )
-        if not os.path.exists(folder_name_algor_expr):
-            os.makedirs(folder_name_algor_expr)
-        process_option_setting_path_save = f'{folder_name_algor_expr}/setting.json'
-        with open(process_option_setting_path_save, 'w') as file:
-            json.dump(server.option, file)
-
         if server.option['algorithm'] in ['ensemble_edgeavg', 'ensemble_raw_avg']:
-            csv_path = '{}/{}_w_algox{}_vx{}_freqx{}_num_edgex{}_num_epochsx{}_proportionx{}_pmove_{}.csv'.format(folder_name_algor_expr,
-                                                                                                                  server.option[
-                                                                                                                      'global_ensemble_weights'],
-                                                                                                                  server.option[
-                                                                                                                      'algorithm'],
-                                                                                                                  server.option[
-                                                                                                                      'mean_velocity'],
-                                                                                                                  server.option[
-                                                                                                                      'edge_update_frequency'],
-                                                                                                                  server.option[
-                                                                                                                      'num_edges'],
-                                                                                                                  server.option[
-                                                                                                                      'num_epochs'],
-                                                                                                                  server.option[
-                                                                                                                      'proportion'],
-                                                                                                                  server.option['pmove']
-                                                                                                                  )
+            name_experiment = '{}_w_algox{}_vx{}_freqx{}_num_edgex{}_num_epochsx{}_proportionx{}_pmove_{}'.format(
+                server.option[
+                    'global_ensemble_weights'],
+                server.option[
+                    'algorithm'],
+                server.option[
+                    'mean_velocity'],
+                server.option[
+                    'edge_update_frequency'],
+                server.option[
+                    'num_edges'],
+                server.option[
+                    'num_epochs'],
+                server.option[
+                    'proportion'],
+                server.option['pmove']
+            )
 
         elif server.option['algorithm'] in ['fed_mobile_distill', 'fed_distill_global', 'fed_distill_mse']:
-
-            csv_path = '{}/alpha{}_temperature_algox{}_vx{}_freqx{}_num_edgex{}_num_epochsx{}_proportionx{}_pmove_{}.csv'.format(
-                folder_name_algor_expr,
+            name_experiment = 'alpha{}_temperature_algox{}_vx{}_freqx{}_num_edgex{}_num_epochsx{}_proportionx{}_pmove_{}'.format(
                 server.option['distill_alpha'],
                 server.option['distill_temperature'],
                 server.option['task'],
@@ -129,11 +104,11 @@ class MyLogger(flw.Logger):
                 server.option['num_edges'],
                 server.option['num_epochs'],
                 server.option['proportion'],
-                server.option['p_move'])
+                server.option['p_move']
+            )
 
         else:
-            csv_path = '{}/algox{}_vx{}_freqx{}_num_edgex{}_num_epochsx{}_proportionx{}_pmove_{}.csv'.format(
-                folder_name_algor_expr,
+            name_experiment = 'algox{}_vx{}_freqx{}_num_edgex{}_num_epochsx{}_proportionx{}_pmove_{}'.format(
                 server.option['algorithm'],
                 server.option['mean_velocity'],
                 server.option['edge_update_frequency'],
@@ -143,6 +118,14 @@ class MyLogger(flw.Logger):
                 server.option['p_move']
             )
 
+        folder_name_algor_expr = os.path.join(path_as_freq, name_experiment)
+        if not os.path.exists(folder_name_algor_expr):
+            os.makedirs(folder_name_algor_expr)
+        process_option_setting_path_save = f'{folder_name_algor_expr}/setting.json'
+        with open(process_option_setting_path_save, 'w') as file:
+            json.dump(server.option, file)
+
+        csv_path = '{}/{}.csv'.format(folder_name_algor_expr, name_experiment)
         experiment_df = pd.DataFrame(columns=[
                                      'round', 'test_acc', 'test_loss', 'train_loss', 'val_loss', 'train_acc', 'val_acc'])
         experiment_df['round'] = [
