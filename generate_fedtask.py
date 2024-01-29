@@ -25,8 +25,8 @@ if __name__ == '__main__':
     option = read_option()
     TaskGen = getattr(importlib.import_module(
         '.'.join(['benchmark', option['dataset'], 'core'])), 'TaskGen')
-    generator = TaskGen(dist_id=option['dist'], skewness=option['skew'],
-                        num_clients=option['num_clients'], number_class_per_client=option['number_class_per_client'])
     # generator = TaskGen(dist_id=option['dist'], skewness=option['skew'],
-    #                     num_clients=option['num_clients'])
+    #                     num_clients=option['num_clients'], number_class_per_client=option['number_class_per_client'])
+    generator = TaskGen(dist_id=option['dist'], skewness=option['skew'],
+                        num_clients=option['num_clients'])
     generator.run()

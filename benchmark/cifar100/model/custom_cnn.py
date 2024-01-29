@@ -20,21 +20,24 @@ class Model(FModule):
         )
         self.decoder = nn.Sequential(
             nn.Linear(3200, 256),
-            nn.BatchNorm1d(256),
+            # nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Linear(256, 64),
-            nn.BatchNorm1d(64),
+            # nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Linear(64, 100),
         )
 
     def forward(self, x):
         x = self.encoder(x)
+        # print(x.shape)
         x = x.flatten(1)
+        # print(x.shape)
         return self.decoder(x)
     
     def pred_and_rep(self, x):
         e = self.encoder(x)
+        # print(e.shape)
         o = self.decoder(e.flatten(1))
         return o, e.flatten(1)
     
